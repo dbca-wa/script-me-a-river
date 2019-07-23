@@ -1,5 +1,5 @@
 ---
-title: "Surfer plots"
+title: "Data ETL: Sonde to BioSys"
 author: "Bart Huntley, DBCA"
 date: "`r Sys.time()`"
 always_allow_html: yes
@@ -20,14 +20,10 @@ knitr::opts_chunk$set(echo = TRUE)
 source("setup.R")
 ```
 
-# Load the data
 
-# Produce plots
-
-# Upload outputs
-```{r upload_to_ckan}
-d <- ckanr::package_show("water-quality-monitoring-swan-canning-estuary-2019")
-d$id
-# r <- ckanr::resource_create(package_id = d$id, format = "pdf", name = "NAME", upload = here:here("plots", "plot.pdf"))
-# r$id
-```
+# Data ETL
+ TODO add steps and code.
+ 
+ Input: xslx in `/data`.
+ 
+ Outcome: data in BioSys

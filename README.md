@@ -25,3 +25,16 @@ Add to `.Rprofile`:
 Sys.setenv(CKAN_URL="https://data.dpaw.wa.gov.au")
 Sys.setenv(CKAN_API_KEY = "your CKAN API key")
 ```
+
+# Data flow
+
+  - Two xslx spreadsheets come from monitoring surveys per river each
+    week.
+  - Place those four xslx into `/data` and run `sonde_to_biosys.Rmd`.
+  - With data now appended to BioSys datasets X and Y (TODO create), run
+    `swan_surfer.Rmd`.
+  - Outputs (figures as PDF, reports as HTML) are uploaded to CKAN
+    datasets:
+      - <https://data.dpaw.wa.gov.au/dataset/water-quality-monitoring-swan-canning-estuary-2019>
+      - <https://data.dpaw.wa.gov.au/dataset/water-quality-monitoring-swan-canning-catchment-2019>
+  - PICA can hot-link PDF figures from data catalogue.
