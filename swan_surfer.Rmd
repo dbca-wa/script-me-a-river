@@ -20,14 +20,20 @@ knitr::opts_chunk$set(echo = TRUE)
 source("setup.R")
 ```
 
-# Load the data
-
 # Produce plots
+Change the oxygenation status colours as appropriate. `ovit` represents the status at Guildford. `ocav` represents the status at Caversham. Can be one of "red", "green" or "blue".
+```{r make_plots}
+CKAN_swan_surfR(path = here::here(), ovit = "green", ocav = "green")
+
+```
 
 # Upload outputs
 ```{r upload_to_ckan}
-d <- ckanr::package_show("water-quality-monitoring-swan-canning-estuary-2019")
-d$id
-# r <- ckanr::resource_create(package_id = d$id, format = "pdf", name = "NAME", upload = here:here("plots", "plot.pdf"))
-# r$id
+CKAN_surfR_upload()
+# need function here to move pdfs uploaded to 'archived_data/'
+```
+
+# Delete
+```{r delete}
+# CKAN_surfR_remove(result = ckanr::resource_search(q = "name:surfer"))
 ```
