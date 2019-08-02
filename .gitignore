@@ -37,3 +37,4 @@ rsconnect/
 
 # Rmd outputs
 *.html
+.Rproj.user
