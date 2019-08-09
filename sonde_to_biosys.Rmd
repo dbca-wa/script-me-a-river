@@ -22,6 +22,18 @@ source("setup.R")
 
 
 # Data ETL
+
+* After a monitoring run, put the two excel workbooks from the sondes (post QA) into the   project folder `data/`
+
+* Run the code snippet below to:
+   + ingest the two workbooks, standardise variable names and construct a single table.
+   + `export = TRUE` will export a csv of the table to `csv/`.
+```{r etl}
+tbl <- raw_to_ready(export = FALSE)
+```
+ 
+ 
+ 
  TODO add steps and code.
  
  Input: xslx in `/data`.
