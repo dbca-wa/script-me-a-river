@@ -3,6 +3,8 @@
 library(here)
 library(ckanr)
 library(monitoR)
+library(tidyverse)
+library(lubridate)
 
 
 #------------------------------------------------------------------------------#
@@ -117,4 +119,117 @@ CKAN_surfR_remove <- function(result){
   }
 }
 
+#' Helper function to make sonde data analysis ready
+#' 
+#' 
+#' @details Sonde data from a monitoring run is ingested from `data/``, 
+#'   variables names standardised and all data for one date is appended to a   
+#'   single table with optional data export to csv.
+#'   
+#' @param export Save csv of result to `csv/`, default: FALSE
+#'
+#' @return Table of all variables recorded by sonde with optional csv export
+#'   of the same.
+#'
+#' @examples
+#' \notrun{
+#' raw_to_ready(export = TRUE)
+#' }
 
+raw_to_ready <- function(export = FALSE){
+  excels <- list.files(path = here::here("data"), pattern = "^\\d{8}.*xlsx$")
+  excels_p <- paste0(here::here("data"),"/",  excels)
+  day <- substr(excels, 1, 8)
+  river <- ifelse(str_detect(excels[1], "c"), "c", "s")
+  dat_out <- data.frame()
+  # error check - 2 workbooks OR dates don't match
+  if(length(excels) != 2 | day[1] != day[2]){
+    stop("Expecting only 2 excel workbooks of sonde data with same date")
+  } else {
+    for(p in excels_p){
+      # make sure of correct tab
+      sheet <- readxl::excel_sheets(p)[stringr::str_sub(stringr::str_to_lower(readxl::excel_sheets(p)), 1, 1) == "e"]
+      dat <- readxl::read_excel(p, sheet = sheet)
+      
+      # Determine sonde from format
+      if(stringr::str_detect(dat[1,1], "D/M/Y|M/D/Y")){
+        # handle "YV" sondes with double header
+        dat2 <- readxl::read_excel(p, sheet = sheet, col_names = FALSE)
+        cells <- unpivotr::as_cells(dat2)
+        col_headers <-
+          cells %>%
+          dplyr::filter(row <= 2, !is.na(chr)) %>%
+          dplyr::select(row, col, header = chr) %>%
+          tidyr::spread(row, header) %>%
+          dplyr::mutate(`2` = ifelse(is.na(`2`), "_X", `2`)) %>%
+          dplyr::mutate(header = ifelse(`2` != "_X", paste(`1`, `2`), `1`)) %>%
+          dplyr::pull(header)
+        dat3 <- readxl::read_excel(p, sheet = sheet, skip = 2, col_names = FALSE)
+        names(dat3) <- tolower(col_headers)
+        
+        # standardise names
+        search_for_these <- c("date time m/d/y hh:mm:ss",
+                              "site codes", "sitenum", "site name", "site", "site code", "site names",
+                              "temp c", "temp °c", "temp øc", "temp", "°c",
+                              "odosat %",
+                              "odo mg/l", "do+ conc mg/l" , "do mg/l",
+                              "spcond us",
+                              "sal ppt", "salinity ppt", "sal-ppt",
+                              "ph",
+                              "depth meters", "depth m", "depth", "dep m",
+                              "turbid+ ntu",
+                              "chl rfu",
+                              "chl ug/l", "chlorophyll µg/l", "chlorophyll ug/l", "chlorophyll æg/l")
+        replace_with_these <- c("Date",
+                                rep("Site", 6), 
+                                rep("°C", 5), 
+                                "DO %",
+                                rep("DO mg/L", 3),
+                                "SPC-mS/cm",
+                                rep("SAL-ppt", 3),
+                                "pH",
+                                rep("DEP m", 4),
+                                "NTU",
+                                "Chl RFU",
+                                rep("Chl ug/L", 4))
+        found <- match(colnames(dat3), search_for_these, nomatch = 0)
+        colnames(dat3)[colnames(dat3) %in% search_for_these] <- replace_with_these[found]
+        
+        # return only required data for surfer
+        # for MDY problems here for alternate format find one to test
+        dat4 <- dat3 %>%
+          dplyr::mutate(Time = substr(as.character(Date), 12, 19),
+                        Date = ymd(day[1])) %>%
+          dplyr::select(Date, Time, Site, `°C`, `DO %`, `DO mg/L`, `SPC-mS/cm`, `SAL-ppt`, 
+                        `pH`, `DEP m`, `NTU`, `Chl RFU`, `Chl ug/L`) %>%
+          dplyr::mutate(Loc = river)
+        
+        #return(dat4)
+        dat_out <- dplyr::bind_rows(dat_out, dat4)
+        
+      } else {
+        # workaround for us/ms unit disparity
+        if(sum(str_detect(names(dat), "SPC-mS/cm")) == 0){
+          dat["SPC-mS/cm"[!("SPC-mS/cm" %in% colnames(dat))]] = dat$`SPC-uS/cm` /1000}
+        
+        dat4 <- dat %>%
+          dplyr::mutate(Time = substr(as.character(Time), 12, 19),
+                        `DEP m` = `VPos m`,
+                        Date = ymd(day[1])) %>%
+          dplyr::select(Date, Time, Site, `°C`, `DO %`, `DO mg/L`, `SPC-mS/cm`, `SAL-ppt`, 
+                        `pH`, `DEP m`, `NTU`, `Chl RFU`, `Chl ug/L`) %>%
+          dplyr::mutate(Loc = river)
+        
+        #return(dat4)
+        dat_out <- dplyr::bind_rows(dat_out, dat4)
+      }
+    }
+    if(export == TRUE){
+      csv_name <- paste0(here::here("csv"), "/",day[1], "_sonde_clean.csv")
+      write_csv(dat_out, csv_name)
+      return(dat_out)
+    } else {
+      return(dat_out)
+    }
+  }
+}
