@@ -1,0 +1,38 @@
+---
+title: "Canning Surfer Plots"
+author: "Bart Huntley, DBCA"
+date: "`r Sys.time()`"
+always_allow_html: yes
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    fig_width: 10
+    fig_height: 6
+    code_folding: hide
+    theme: lumen
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+source("setup.R")
+```
+
+# Produce plots
+Change the oxygenation status colours as appropriate. `obac` represents the status at Bacon Street. `onic` represents the status at Nicholson Road. Can be one of "red", "green" or "blue".
+```{r make_plots}
+CKAN_canning_surfR(path = here::here(), obac = "green", onic = "green")
+```
+
+# Upload outputs
+```{r upload_to_ckan}
+CKAN_surfR_upload()
+# need function here to move pdfs uploaded to 'archived_data/'
+```
+
+# Delete
+```{r delete}
+# CKAN_surfR_remove(result = ckanr::resource_search(q = "name:surfer"))
+```
